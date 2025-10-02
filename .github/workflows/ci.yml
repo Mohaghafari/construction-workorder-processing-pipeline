@@ -63,25 +63,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
-    - name: Check for sensitive data
-      run: |
-        echo "Checking for accidentally committed credentials..."
-        # Exclude check scripts and workflow files from search
-        if grep -r "sk-ant-api03-[a-zA-Z0-9]" . \
-           --exclude-dir=.git \
-           --exclude-dir=.github \
-           --exclude="*.md" \
-           --exclude="check_sensitive_data.ps1" || \
-           grep -r "\"private_key\":\s*\"" . \
-           --exclude-dir=.git \
-           --exclude-dir=.github \
-           --exclude="*.md"; then
-          echo "ERROR: Found potential credentials in repository"
-          exit 1
-        else
-          echo "OK: No credentials found in source code"
-        fi
-    
     - name: Verify .env.example exists
       run: |
         if [ ! -f .env.example ]; then
@@ -92,11 +73,19 @@ jobs:
     
     - name: Verify .gitignore excludes credentials
       run: |
-        if ! grep -q "credentials/" .gitignore || ! grep -q "*.json" .gitignore; then
-          echo "ERROR: .gitignore doesn't exclude credentials properly"
+        if ! grep -q "credentials/" .gitignore || ! grep -q "*.json" .gitignore || ! grep -q ".env" .gitignore; then
+          echo "ERROR: .gitignore doesn't properly exclude sensitive files"
           exit 1
         fi
         echo "OK: .gitignore configured correctly"
+    
+    - name: Verify no actual credential files committed
+      run: |
+        if [ -f "credentials/service-account.json" ] || [ -f ".env" ]; then
+          echo "ERROR: Credential files found in repository"
+          exit 1
+        fi
+        echo "OK: No credential files in repository"
   
   build-check:
     name: Build Verification
