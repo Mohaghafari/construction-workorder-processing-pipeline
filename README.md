@@ -250,6 +250,10 @@ Contributions are welcome. Please ensure:
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
+Mohammad Ghafari  
+Data Engineer  
+[LinkedIn](https://linkedin.com/in/Mohaghafari) | [GitHub](https://github.com/Mohaghafari)
+
 ## Acknowledgments
 
 Built using:
