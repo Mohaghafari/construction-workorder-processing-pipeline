@@ -60,8 +60,8 @@ BigQuery Data Warehouse
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/ai-work-order-pipeline.git
-cd ai-work-order-pipeline
+git clone https://github.com/Mohaghafari/construction-workorder-processing-pipeline.git
+cd construction-workorder-processing-pipeline
 
 # Configure environment
 cp .env.example .env

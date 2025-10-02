@@ -1,4 +1,4 @@
-# Credentials and Secrets
+﻿# Credentials and Secrets
 *.json
 !schema*.json
 !package*.json
