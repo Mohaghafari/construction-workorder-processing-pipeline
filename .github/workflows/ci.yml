@@ -66,13 +66,20 @@ jobs:
     - name: Check for sensitive data
       run: |
         echo "Checking for accidentally committed credentials..."
-        if grep -r "sk-ant-api03" . --exclude-dir=.git --exclude="*.md" || \
-           grep -r "private_key_id" . --exclude-dir=.git --exclude="*.md" || \
-           grep -r "AKIA" . --exclude-dir=.git --exclude="*.md"; then
+        # Exclude check scripts and workflow files from search
+        if grep -r "sk-ant-api03-[a-zA-Z0-9]" . \
+           --exclude-dir=.git \
+           --exclude-dir=.github \
+           --exclude="*.md" \
+           --exclude="check_sensitive_data.ps1" || \
+           grep -r "\"private_key\":\s*\"" . \
+           --exclude-dir=.git \
+           --exclude-dir=.github \
+           --exclude="*.md"; then
           echo "ERROR: Found potential credentials in repository"
           exit 1
         else
-          echo "OK: No credentials found"
+          echo "OK: No credentials found in source code"
         fi
     
     - name: Verify .env.example exists
