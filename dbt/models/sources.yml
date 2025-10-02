@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw data from OCR processing
+    database: "{{ env_var('PROJECT_ID', 'work-orders-435517') }}"
+    schema: work_orders_production
+    tables:
+      - name: raw_work_orders_with_ml
+        description: Work order data with ML categorizations applied
+        columns:
+          - name: work_order_id
+            description: Unique identifier
+            tests:
+              - unique
+              - not_null
+          - name: work_order_number
+            description: Work order number from document
+          - name: builder_name
+            description: Corrected builder/company name
+          - name: builder_name_raw
+            description: Original builder name from OCR
+          - name: project_name
+            description: Corrected project or phase name
+          - name: project_name_raw
+            description: Original project name from OCR
+          - name: ml_categorization
+            description: ML-based service categorization (AEON or AE3)
+          - name: extracted_at
+            description: Timestamp when data was extracted
+            tests:
+              - not_null

@@ -1,0 +1,96 @@
+# Credentials and Secrets
+*.json
+!schema*.json
+!package*.json
+credentials/
+work-orders-*.json
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+pipeline.log
+categorization.log
+gpt4_correction.log
+aeon_processing.log
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Data files
+*.csv
+!data/sample*.csv
+!data/*dictionary*.csv
+*.xlsx
+!Dictionary/*.xlsx
+!Categories_Dictionary/*.xlsx
+*.pdf
+exports/
+temp/
+tmp/
+
+# Airflow
+airflow/logs/
+airflow.db
+airflow.cfg
+
+# Docker
+.dockerignore
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+

@@ -1,0 +1,172 @@
+version: 2
+
+models:
+  # Staging Models
+  - name: stg_work_orders
+    description: "Cleaned and standardized work order data from raw extraction"
+    columns:
+      - name: work_order_id
+        description: "Unique identifier for each work order"
+        tests:
+          - unique
+          - not_null
+      
+      - name: work_order_number
+        description: "Work order number from PDF"
+        tests:
+          - not_null
+      
+      - name: builder_name
+        description: "Corrected builder name"
+        tests:
+          - not_null
+      
+      - name: project_name
+        description: "Corrected project name"
+        tests:
+          - not_null
+      
+      - name: month
+        description: "Normalized month name"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 
+                       'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+      
+      - name: year
+        description: "4-digit year"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 2000
+              max_value: 2030
+      
+      - name: work_date
+        description: "Parsed work date from month/year"
+        tests:
+          - not_null
+      
+      - name: data_completeness_score
+        description: "Score from 0-1 indicating data completeness"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+  
+  # Dimension Models
+  - name: dim_builders
+    description: "Builder dimension table"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "total_work_orders >= 0"
+    columns:
+      - name: builder_key
+        description: "Surrogate key for builder"
+        tests:
+          - unique
+          - not_null
+      
+      - name: builder_name_corrected
+        description: "Corrected builder name"
+        tests:
+          - not_null
+      
+      - name: builder_tier
+        description: "Builder classification tier"
+        tests:
+          - accepted_values:
+              values: ['Platinum', 'Gold', 'Silver', 'Bronze']
+      
+      - name: activity_status
+        description: "Builder activity status"
+        tests:
+          - accepted_values:
+              values: ['Active', 'Moderate', 'Low Activity', 'Inactive']
+  
+  - name: dim_projects
+    description: "Project dimension table"
+    columns:
+      - name: project_key
+        description: "Surrogate key for project"
+        tests:
+          - unique
+          - not_null
+      
+      - name: project_name_corrected
+        description: "Corrected project name"
+        tests:
+          - not_null
+  
+  - name: dim_companies
+    description: "Company dimension table"
+    columns:
+      - name: company_key
+        description: "Surrogate key for company"
+        tests:
+          - unique
+          - not_null
+      
+      - name: company_name_corrected
+        description: "Standardized company name"
+        tests:
+          - not_null
+  
+  # Fact Models
+  - name: fct_work_orders
+    description: "Main fact table for work order analytics"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "data_completeness_score >= 0.5"
+    columns:
+      - name: work_order_id
+        description: "Unique identifier"
+        tests:
+          - unique
+          - not_null
+      
+      - name: work_order_number
+        description: "Work order number"
+        tests:
+          - not_null
+      
+      - name: work_date
+        description: "Work order date"
+        tests:
+          - not_null
+      
+      - name: builder_key
+        description: "Foreign key to dim_builders"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_builders')
+              field: builder_key
+      
+      - name: project_key
+        description: "Foreign key to dim_projects"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_projects')
+              field: project_key
+      
+      - name: company_key
+        description: "Foreign key to dim_companies"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_companies')
+              field: company_key
+      
+      - name: data_completeness_score
+        description: "Data quality score"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+

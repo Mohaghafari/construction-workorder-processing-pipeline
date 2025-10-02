@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # Main pipeline service
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: work-order-pipeline
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account.json
+      - GCP_PROJECT_ID=work-orders-435517
+      - POPPLER_PATH=/usr/bin
+    volumes:
+      - ./src:/app/src
+      - ./dbt:/app/dbt
+      - ./scripts:/app/scripts
+      - ./credentials:/app/credentials:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+    command: tail -f /dev/null  # Keep running for exec
+    networks:
+      - pipeline-network
+
+  # dbt service (for running transformations)
+  dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: work-order-dbt
+    working_dir: /app/dbt
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account.json
+      - GCP_PROJECT_ID=work-orders-435517
+    volumes:
+      - ./dbt:/app/dbt
+      - ./credentials:/app/credentials:ro
+    command: dbt docs serve --port 8080
+    ports:
+      - "8080:8080"
+    networks:
+      - pipeline-network
+
+  # PostgreSQL for Airflow metadata (local development)
+  postgres:
+    image: postgres:14
+    container_name: airflow-postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    networks:
+      - pipeline-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
+  # Airflow webserver (local development)
+  airflow-webserver:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-webserver
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account.json
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/app/src
+      - ./credentials:/app/credentials:ro
+      - ./logs:/opt/airflow/logs
+    ports:
+      - "8081:8080"
+    command: airflow webserver
+    networks:
+      - pipeline-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Airflow scheduler
+  airflow-scheduler:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-scheduler
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account.json
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/app/src
+      - ./credentials:/app/credentials:ro
+      - ./logs:/opt/airflow/logs
+    command: airflow scheduler
+    networks:
+      - pipeline-network
+
+volumes:
+  postgres-db:
+    driver: local
+
+networks:
+  pipeline-network:
+    driver: bridge
+

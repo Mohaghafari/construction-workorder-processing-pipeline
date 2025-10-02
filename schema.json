@@ -1,0 +1,12 @@
+[
+  {"name":"work_order_id","type":"STRING","mode":"REQUIRED"},
+  {"name":"work_order_number","type":"STRING","mode":"NULLABLE"},
+  {"name":"builder_name","type":"STRING","mode":"NULLABLE"},
+  {"name":"project_name","type":"STRING","mode":"NULLABLE"},
+  {"name":"month","type":"STRING","mode":"NULLABLE"},
+  {"name":"year","type":"INTEGER","mode":"NULLABLE"},
+  {"name":"company_name","type":"STRING","mode":"NULLABLE"},
+  {"name":"description","type":"STRING","mode":"NULLABLE"},
+  {"name":"file_url","type":"STRING","mode":"NULLABLE"},
+  {"name":"extracted_at","type":"TIMESTAMP","mode":"REQUIRED"}
+]

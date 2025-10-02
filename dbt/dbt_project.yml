@@ -1,0 +1,106 @@
+name: 'work_order_analytics'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'work_order_analytics'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["data"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Model configurations
+models:
+  work_order_analytics:
+    # Global configurations
+    +persist_docs:
+      relation: true
+      columns: true
+    
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ['staging']
+      
+    marts:
+      +materialized: table
+      +schema: analytics
+      +tags: ['marts']
+      
+      # Specific model configurations
+      fct_work_orders:
+        +partition_by:
+          field: work_date
+          data_type: date
+          granularity: month
+        +cluster_by: ['builder_key', 'project_key']
+        
+      dim_builders:
+        +cluster_by: ['builder_name_corrected']
+        
+      dim_projects:
+        +cluster_by: ['project_name_corrected']
+        
+      dim_companies:
+        +cluster_by: ['company_name_corrected']
+
+# Snapshot configurations
+snapshots:
+  work_order_analytics:
+    target_schema: snapshots
+    strategy: timestamp
+    updated_at: updated_at
+
+# Test configurations
+tests:
+  work_order_analytics:
+    # Test severity levels
+    +severity: warn
+    
+    # Specific test configurations
+    staging:
+      +severity: error  # Stricter for staging
+      
+# Seed configurations
+seeds:
+  work_order_analytics:
+    +schema: reference_data
+    builder_dictionary:
+      +column_types:
+        original_name: STRING
+        corrected_name: STRING
+        confidence_score: FLOAT64
+    
+# Variable configurations
+vars:
+  # Date variables for incremental models
+  lookback_days: 7
+  
+  # Data quality thresholds
+  min_completeness_score: 0.7
+  max_null_percentage: 0.1
+  
+  # Business rules
+  active_days_threshold: 30
+  builder_tier_thresholds:
+    platinum: 100
+    gold: 50
+    silver: 20
+
+# Macro configurations
+on-run-start:
+  - "{{ log('Starting work order analytics run at ' ~ run_started_at, info=True) }}"
+  - "CREATE SCHEMA IF NOT EXISTS {{ target.schema }}_staging"
+  - "CREATE SCHEMA IF NOT EXISTS {{ target.schema }}_analytics"
+
+on-run-end:
+  - "{{ log('Completed work order analytics run', info=True) }}"
